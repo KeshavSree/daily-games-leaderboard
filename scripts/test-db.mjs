@@ -37,6 +37,10 @@ try {
     new URL("../supabase/migrations/008_animillion.sql", import.meta.url),
     "utf8",
   );
+  const farflungMigration = await readFile(
+    new URL("../supabase/migrations/009_farflung.sql", import.meta.url),
+    "utf8",
+  );
   const test = (
     await readFile(new URL("../tests/database.sql", import.meta.url), "utf8")
   )
@@ -58,7 +62,9 @@ try {
         "\n" +
         reusableInviteMigration +
         "\n" +
-        animillionMigration,
+        animillionMigration +
+        "\n" +
+        farflungMigration,
     );
   await db.exec(test);
   console.log(

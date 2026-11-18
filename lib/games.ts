@@ -1,4 +1,5 @@
-export type Game = "maptap" | "chainle" | "krillion" | "linkdle" | "animillion";
+export type Game =
+  "maptap" | "chainle" | "krillion" | "linkdle" | "animillion" | "farflung";
 export type ParsedScore = {
   game: Game;
   score: number;
@@ -7,12 +8,14 @@ export type ParsedScore = {
 };
 export const gameNames: Record<Game, string> = {
   linkdle: "Linkdle",
+  farflung: "Farflung",
   animillion: "Animillion",
   maptap: "MapTap",
   chainle: "Chainle",
   krillion: "Krillion",
 };
 export const gameLinks: Record<Game, string> = {
+  farflung: "https://farflung.game",
   animillion: "https://animillion.app",
   linkdle: "https://linkdle.com/en",
   krillion: "https://krillion.io",
@@ -25,6 +28,7 @@ export const supportedGames: Game[] = [
   "maptap",
   "linkdle",
   "animillion",
+  "farflung",
 ];
 export const defaultSettings = {
   timezone: "America/Indiana/Indianapolis",
@@ -34,6 +38,8 @@ export const defaultSettings = {
   krillionAnchorNumber: 126,
   animillionAnchorDate: "2026-11-18",
   animillionAnchorNumber: 24,
+  farflungAnchorDate: "2026-11-18",
+  farflungAnchorNumber: 45,
 };
 export type Settings = typeof defaultSettings;
 export function dateInZone(
@@ -86,6 +92,19 @@ export function animillionPuzzleNumber(
     )
   );
 }
+export function farflungPuzzleNumber(
+  date: string,
+  settings: Settings = defaultSettings,
+) {
+  return (
+    settings.farflungAnchorNumber +
+    Math.round(
+      (Date.parse(date + "T12:00:00Z") -
+        Date.parse(settings.farflungAnchorDate + "T12:00:00Z")) /
+        86400000,
+    )
+  );
+}
 export function parseScore(
   raw: string,
   date: string,
@@ -98,12 +117,28 @@ export function parseScore(
   const isChain = /chainle\s*#/i.test(text);
   const isKrillion = /krillion\s*#/i.test(text);
   const isLinkdle = /\blinkdle\b/i.test(text);
+  const isFarflung = /\bfarflung\b/i.test(text);
   const isAnimillion = /\banimillion\b/i.test(text);
   if (
-    [isMap, isChain, isKrillion, isLinkdle, isAnimillion].filter(Boolean)
-      .length > 1
+    [isMap, isChain, isKrillion, isLinkdle, isAnimillion, isFarflung].filter(
+      Boolean,
+    ).length > 1
   )
     throw new Error("Submit one game at a time.");
+  if (isFarflung) {
+    const share =
+      /^Farflung(?:[ \t]+Expedition)?[ \t]*#(\d+)[ \t]*\n[ \t]*(\d{1,3}(?:,\d{3})+|\d+)[ \t]*km(?:\nhttps:\/\/(?:www\.)?farflung\.game\/?)?$/i.exec(
+        text,
+      );
+    if (!share) throw new Error("Paste a Farflung result.");
+    const number = Number(share[1]);
+    const score = Number(share[2].replaceAll(",", ""));
+    if (!Number.isSafeInteger(score) || score < 0 || score > 2147483647)
+      throw new Error("Invalid Farflung distance.");
+    if (number !== farflungPuzzleNumber(date, settings))
+      throw new Error("Only today’s Farflung expedition is open.");
+    return { game: "farflung", score, puzzleKey: String(number), date };
+  }
   if (isAnimillion) {
     const headers = [
       ...text.matchAll(
@@ -213,7 +248,7 @@ export function parseScore(
     return { game: "krillion", score, puzzleKey: String(number), date };
   }
   throw new Error(
-    "Use a Krillion, Chainle, MapTap, Linkdle, or Animillion share.",
+    "Use a Krillion, Chainle, MapTap, Linkdle, Animillion, or Farflung share.",
   );
 }
 export function sampleScore(
@@ -221,6 +256,8 @@ export function sampleScore(
   date: string,
   settings: Settings = defaultSettings,
 ) {
+  if (game === "farflung")
+    return `Farflung #${farflungPuzzleNumber(date, settings)}\n250 km`;
   if (game === "animillion")
     return `ANIMILLION · CLIMB #${animillionPuzzleNumber(date, settings)} · Floor 100/700\n⬛⬛⬜⬛🟪⬛🟦\nthe goblin warrens`;
   if (game === "linkdle")
@@ -239,7 +276,9 @@ export function sampleScore(
 
 export function formatScore(game: Game, score: number) {
   const value = score.toLocaleString("en-US");
-  return game === "linkdle"
-    ? `${value} ${score === 1 ? "jump" : "jumps"}`
-    : value;
+  return game === "farflung"
+    ? `${value} km`
+    : game === "linkdle"
+      ? `${value} ${score === 1 ? "jump" : "jumps"}`
+      : value;
 }

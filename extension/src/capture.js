@@ -3,7 +3,7 @@
     if (
       typeof text === "string" &&
       text.length <= 4000 &&
-      /(?:ANIMILLION|maptap\.gg|Chainle\s*#|Krillion\s*#|today['’]s linkdle)/i.test(
+      /(?:Farflung|ANIMILLION|maptap\.gg|Chainle\s*#|Krillion\s*#|today['’]s linkdle)/i.test(
         text,
       )
     )

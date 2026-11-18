@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Daily/",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Submit completed daily game scores to your private Daily leaderboard.",
   "minimum_chrome_version": "111",
   "permissions": ["activeTab"],
@@ -27,7 +27,9 @@
         "https://www.maptap.gg/*",
         "https://linkdle.com/en*",
         "https://animillion.app/*",
-        "https://www.animillion.app/*"
+        "https://www.animillion.app/*",
+        "https://farflung.game/*",
+        "https://www.farflung.game/*"
       ],
       "js": ["capture.js"],
       "run_at": "document_start",
@@ -43,7 +45,9 @@
         "https://www.maptap.gg/*",
         "https://linkdle.com/en*",
         "https://animillion.app/*",
-        "https://www.animillion.app/*"
+        "https://www.animillion.app/*",
+        "https://farflung.game/*",
+        "https://www.farflung.game/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

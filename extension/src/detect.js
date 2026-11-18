@@ -10,6 +10,17 @@ export function detectResult(text, hostname, date = dateInZone()) {
   if (!game || typeof text !== "string") return null;
   text = text.replace(/\r\n?/g, "\n").replace(/\u00a0/g, " ");
   const candidates = [];
+  if (game === "farflung") {
+    for (const result of text.matchAll(
+      /Farflung(?:[ \t]+Expedition)?[ \t]*#\d+[ \t]*\n[ \t]*[\d,]+[ \t]*km/gi,
+    ))
+      candidates.push(result[0]);
+    const completed = /Expedition[ \t]*#(\d+)\s+Complete\s+([\d,]+)\s*km/i.exec(
+      text,
+    );
+    if (completed)
+      candidates.push(`Farflung #${completed[1]}\n${completed[2]} km`);
+  }
   if (game === "animillion") {
     candidates.push(
       ...[
