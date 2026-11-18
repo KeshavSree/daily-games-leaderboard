@@ -1,0 +1,47 @@
+{
+  "name": "daily-games",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build --webpack",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:db": "node scripts/test-db.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@supabase/ssr": "https://registry.npmjs.org/@supabase/ssr/-/ssr-0.10.2.tgz",
+    "@supabase/supabase-js": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.103.3.tgz",
+    "lucide-react": "0.554.0",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "overrides": {
+    "@supabase/auth-js": "https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.103.3.tgz",
+    "@supabase/functions-js": "https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.103.3.tgz",
+    "@supabase/postgrest-js": "https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-2.103.3.tgz",
+    "@supabase/realtime-js": "https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.103.3.tgz",
+    "@supabase/storage-js": "https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.103.3.tgz",
+    "@supabase/phoenix": "https://registry.npmjs.org/@supabase/phoenix/-/phoenix-0.4.0.tgz",
+    "@types/ws": "https://registry.npmjs.org/@types/ws/-/ws-8.18.1.tgz",
+    "iceberg-js": "https://registry.npmjs.org/iceberg-js/-/iceberg-js-0.8.1.tgz",
+    "ws": "https://registry.npmjs.org/ws/-/ws-8.21.3.tgz"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "https://registry.npmjs.org/@electric-sql/pglite/-/pglite-0.4.1.tgz",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "prettier": "^3.9.9",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3"
+  }
+}
