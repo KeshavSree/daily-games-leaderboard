@@ -10,15 +10,15 @@ export async function invitationAvailable(token: string) {
   if (!hash || !configured()) return false;
   const { data, error } = await admin()
     .from("member_invites")
-    .select("expires_at,used_at,revoked_at,reserved_by")
+    .select("expires_at,used_at,revoked_at,reserved_by,reusable")
     .eq("token_hash", hash)
     .single();
   return (
     !error &&
     !!data &&
-    !data.used_at &&
+    (data.reusable || !data.used_at) &&
     !data.revoked_at &&
-    !data.reserved_by &&
-    Date.parse(data.expires_at) > Date.now()
+    (data.reusable || !data.reserved_by) &&
+    (data.expires_at === null || Date.parse(data.expires_at) > Date.now())
   );
 }

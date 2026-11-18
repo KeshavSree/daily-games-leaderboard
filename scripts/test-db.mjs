@@ -26,6 +26,13 @@ try {
     new URL("../supabase/migrations/006_linkdle.sql", import.meta.url),
     "utf8",
   );
+  const reusableInviteMigration = await readFile(
+    new URL(
+      "../supabase/migrations/007_owner_reusable_invite.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
   const test = (
     await readFile(new URL("../tests/database.sql", import.meta.url), "utf8")
   )
@@ -43,7 +50,9 @@ try {
         "\n" +
         permanentMigration +
         "\n" +
-        linkdleMigration,
+        linkdleMigration +
+        "\n" +
+        reusableInviteMigration,
     );
   await db.exec(test);
   console.log(
