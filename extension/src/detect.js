@@ -11,6 +11,22 @@ export function detectResult(text, hostname, date = dateInZone()) {
   text = text.replace(/\r\n?/g, "\n").replace(/\u00a0/g, " ");
   const candidates = [];
   if (game === "linkdle") {
+    const jumps = /Jumps[^\n]*\n\s*(\d+)/i.exec(text);
+    const path = /Path[^\n]*\n([^]*?)(?=\nCan you do better|\nTry again)/i.exec(
+      text,
+    );
+    if (
+      /You have won/i.test(text) &&
+      /Next linkdle in/i.test(text) &&
+      jumps &&
+      path
+    ) {
+      const words = path[1].split(/\s*\n\s*arrow_forward\s*\n\s*/);
+      if (words.length > 1)
+        candidates.push(
+          `I solved today's linkdle (${words[0].trim()} → ${words.at(-1).trim()}) in ${jumps[1]} jumps! 🎉 https://linkdle.com/en`,
+        );
+    }
     const match =
       /I solved today['’]s linkdle[^\n]*?in\s+\d+\s+jumps?!\s*🎉(?:\s+https:\/\/(?:www\.)?linkdle\.com\/en\/?)?/i.exec(
         text,
@@ -23,6 +39,11 @@ export function detectResult(text, hostname, date = dateInZone()) {
       );
   }
   if (game === "chainle") {
+    const completed = /puzzle\s+(\d+)\s+([\d,]+)\s+of\s+5,?000/i.exec(text);
+    if (completed && /(?:Share|Continue unlimited)/i.test(text))
+      candidates.push(
+        `Chainle #${completed[1]} · ${completed[2]} 🔗\nhttps://chainle.io`,
+      );
     const matches = [...text.matchAll(/Chainle\s*#\d+\s*[·•]\s*[\d,]+\s*🔗/gi)];
     for (const match of matches)
       candidates.push(match[0] + "\nhttps://chainle.io");
@@ -49,6 +70,34 @@ export function detectResult(text, hostname, date = dateInZone()) {
       ),
     ];
     candidates.push(...matches.map((match) => match[0]));
+    // The final screen uses SCORE, not Final score.
+    const screenDate =
+      /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2}),\s*(\d{4})/i.exec(
+        text,
+      );
+    const total = /(?:^|\n)SCORE\s*\n\s*(\d+)(?=\n|$)/i.exec(text);
+    if (screenDate && total && /Share your score/i.test(text)) {
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      const month = months.find((value) =>
+        value.toLowerCase().startsWith(screenDate[1].toLowerCase()),
+      );
+      candidates.push(
+        `www.maptap.gg ${month} ${screenDate[2]}, ${screenDate[3]}\nFinal score: ${total[1]}`,
+      );
+    }
     // Some result screens show the date and final score, without the share URL.
     const label = new Date(date + "T12:00:00Z").toLocaleDateString("en-US", {
       month: "long",

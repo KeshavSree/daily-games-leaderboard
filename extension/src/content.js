@@ -79,7 +79,10 @@ function scan() {
     host?.remove();
   }
   const visible = document.body?.innerText || "";
-  const texts = [visible.slice(0, 200000)];
+  const texts = [
+    document.querySelector('[role="dialog"]')?.innerText || "",
+    visible.slice(0, 200000),
+  ];
   // Linkdle exposes its completed result as the share button's title.
   for (const el of document.querySelectorAll(
     "[title],textarea,input[readonly]",
@@ -90,6 +93,10 @@ function scan() {
   let next = detectResult(texts.join("\n"), location.hostname);
   if (!next && captured) next = detectResult(captured, location.hostname);
   if (next) show(next);
+  else {
+    candidate = null;
+    host?.remove();
+  }
 }
 window.addEventListener("message", (event) => {
   if (
@@ -116,8 +123,11 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
 });
 let timer;
 new MutationObserver(() => {
-  clearTimeout(timer);
-  timer = setTimeout(scan, 250);
+  if (timer) return;
+  timer = setTimeout(() => {
+    timer = null;
+    scan();
+  }, 250);
 }).observe(document.documentElement, {
   subtree: true,
   childList: true,
