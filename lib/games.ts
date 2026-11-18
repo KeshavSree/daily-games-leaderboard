@@ -1,4 +1,4 @@
-export type Game = "maptap" | "chainle" | "krillion";
+export type Game = "maptap" | "chainle" | "krillion" | "linkdle";
 export type ParsedScore = {
   game: Game;
   score: number;
@@ -6,16 +6,23 @@ export type ParsedScore = {
   date: string;
 };
 export const gameNames: Record<Game, string> = {
+  linkdle: "Linkdle",
   maptap: "MapTap",
   chainle: "Chainle",
   krillion: "Krillion",
 };
 export const gameLinks: Record<Game, string> = {
+  linkdle: "https://linkdle.com/en",
   krillion: "https://krillion.io",
   chainle: "https://chainle.io",
   maptap: "https://www.maptap.gg",
 };
-export const supportedGames: Game[] = ["krillion", "chainle", "maptap"];
+export const supportedGames: Game[] = [
+  "krillion",
+  "chainle",
+  "maptap",
+  "linkdle",
+];
 export const defaultSettings = {
   timezone: "America/Indiana/Indianapolis",
   chainleAnchorDate: "2026-11-18",
@@ -72,8 +79,30 @@ export function parseScore(
   const isMap = /(?:www\.)?maptap\.gg\b/i.test(text);
   const isChain = /chainle\s*#/i.test(text);
   const isKrillion = /krillion\s*#/i.test(text);
-  if ([isMap, isChain, isKrillion].filter(Boolean).length > 1)
+  const isLinkdle = /\blinkdle\b/i.test(text);
+  if ([isMap, isChain, isKrillion, isLinkdle].filter(Boolean).length > 1)
     throw new Error("Submit one game at a time.");
+  if (isLinkdle) {
+    const share =
+      /^I solved today['’]s linkdle[ \t]+\(([^()\n→]+)→([^()\n→]+)\)[ \t]+in[ \t]+(\d+)[ \t]+jumps?![ \t]*🎉[ \t]+https:\/\/(?:www\.)?linkdle\.com\/en\/?$/i.exec(
+        text,
+      );
+    if (!share) throw new Error("Paste the full Linkdle share text.");
+    const words = [share[1], share[2]].map((word) =>
+      word.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase(),
+    );
+    if (words.some((word) => !word || word.length > 100))
+      throw new Error("Invalid Linkdle words.");
+    const score = Number(share[3]);
+    if (!Number.isSafeInteger(score) || score < 1 || score > 2147483647)
+      throw new Error("Invalid Linkdle jump count.");
+    return {
+      game: "linkdle",
+      score,
+      puzzleKey: JSON.stringify([date, ...words]),
+      date,
+    };
+  }
   if (isMap) {
     const headers = [
       ...text.matchAll(
@@ -145,13 +174,15 @@ export function parseScore(
       throw new Error("Only today’s Krillion puzzle is open.");
     return { game: "krillion", score, puzzleKey: String(number), date };
   }
-  throw new Error("Use a Krillion, Chainle, or MapTap share.");
+  throw new Error("Use a Krillion, Chainle, MapTap, or Linkdle share.");
 }
 export function sampleScore(
   game: Game,
   date: string,
   settings: Settings = defaultSettings,
 ) {
+  if (game === "linkdle")
+    return "I solved today’s linkdle (Torque → Adverb) in 3 jumps! 🎉 https://linkdle.com/en";
   if (game === "krillion")
     return `Krillion #${krillionPuzzleNumber(date, settings)} 🦐\n390\n\n🐟🦑🦑🏮🫧🏮🦑`;
   if (game === "chainle")
@@ -162,4 +193,11 @@ export function sampleScore(
     timeZone: "UTC",
   });
   return `www.maptap.gg ${label}\n95🏅 95🏅 92🏆 99🔥 96🔥\nFinal score: 959`;
+}
+
+export function formatScore(game: Game, score: number) {
+  const value = score.toLocaleString("en-US");
+  return game === "linkdle"
+    ? `${value} ${score === 1 ? "jump" : "jumps"}`
+    : value;
 }

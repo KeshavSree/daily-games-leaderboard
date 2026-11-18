@@ -22,6 +22,10 @@ try {
     new URL("../supabase/migrations/005_permanent_scores.sql", import.meta.url),
     "utf8",
   );
+  const linkdleMigration = await readFile(
+    new URL("../supabase/migrations/006_linkdle.sql", import.meta.url),
+    "utf8",
+  );
   const test = (
     await readFile(new URL("../tests/database.sql", import.meta.url), "utf8")
   )
@@ -35,7 +39,11 @@ try {
         "\n" +
         ownerMigration +
         "\n" +
-        linkMigration + "\n" + permanentMigration,
+        linkMigration +
+        "\n" +
+        permanentMigration +
+        "\n" +
+        linkdleMigration,
     );
   await db.exec(test);
   console.log(

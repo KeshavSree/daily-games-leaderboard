@@ -20,6 +20,7 @@ import {
   submitScore,
 } from "@/app/actions";
 import {
+  formatScore,
   gameNames,
   gameLinks,
   supportedGames,
@@ -185,7 +186,11 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
       try {
         const parsed = parseScore(raw, data.date, data.settings);
         if (closed) throw new Error("Day closed. Reset the demo to try again.");
-        if (myScores.some((score) => score.game === parsed.game && score.date === parsed.date))
+        if (
+          myScores.some(
+            (score) => score.game === parsed.game && score.date === parsed.date,
+          )
+        )
           throw new Error("Already submitted. Scores cannot be changed.");
         if (!data.demo) {
           const result = await submitScore(raw);
@@ -194,10 +199,7 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
         setData((d) => ({
           ...d,
           latestSubmission: { ...parsed, userId: d.me, raw },
-          submissions: [
-            ...d.submissions,
-            { ...parsed, userId: d.me, raw },
-          ],
+          submissions: [...d.submissions, { ...parsed, userId: d.me, raw }],
         }));
         if (!data.demo) router.refresh();
         setRaw("");
@@ -364,7 +366,7 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
                                 </span>
                               </span>
                             ) : score ? (
-                              num(score.score)
+                              formatScore(score.game, score.score)
                             ) : (
                               <span className="muted">—</span>
                             )}
@@ -409,7 +411,7 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
                       <span className="detected-label">
                         {gameNames[preview.game]}
                         <span className="muted">/</span>
-                        {num(preview.score)}
+                        {formatScore(preview.game, preview.score)}
                       </span>
                     ) : (
                       <span />
@@ -452,7 +454,9 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
                       <span>{gameNames[lastScore.game]}</span>
                     </div>
                     <div className="score-actions">
-                      <strong>{num(lastScore.score)}</strong>
+                      <strong>
+                        {formatScore(lastScore.game, lastScore.score)}
+                      </strong>
                     </div>
                   </div>
                 </section>
@@ -486,7 +490,9 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
                           )}
                         </td>
                         <td>{gameNames[h.game]}</td>
-                        <td className="numeric">{num(h.score)}</td>
+                        <td className="numeric">
+                          {formatScore(h.game, h.score)}
+                        </td>
                         <td className="numeric">
                           {h.delta === null ? (
                             <span className="muted tiny">Pending</span>
