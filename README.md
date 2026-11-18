@@ -101,3 +101,7 @@ Only SHA-256 token hashes are stored. Row-level security and server-side owner c
 Linkdle: paste `I solved today's linkdle (Torque → Adverb) in 3 jumps! 🎉 https://linkdle.com/en`. Fewer jumps win. Only submissions on the same day with the same ordered endpoint words are compared (case and spacing are normalized). The share has no date; its submission day is used.
 
 The configured root owner can also have a reusable invitation with no expiration. It creates regular member accounts, stays valid after signup, and can be revoked through `member_invites.revoked_at`. Ordinary generated invitations remain single use.
+
+## Browser extension
+
+Download at `/extension`. Build the unpacked Chrome/Edge zip with `npm run build:extension`. Source is in `extension/`; the generated download is served from `public/downloads/daily-extension.zip`. It detects visible completed shares and the game’s Share output, then submits only on an explicit click. Authentication uses an inactive same-origin Daily tab and a CSRF-protected endpoint; no session tokens leave Daily.

@@ -9,3 +9,5 @@ node_modules/
 .supabase/
 supabase/.temp/
 *.pem
+
+.extension-build/

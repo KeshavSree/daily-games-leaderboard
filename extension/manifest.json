@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "Daily/",
+  "version": "0.1.0",
+  "description": "Submit completed daily game scores to your private Daily leaderboard.",
+  "minimum_chrome_version": "111",
+  "permissions": ["activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Daily/",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://krillion.io/*",
+        "https://www.krillion.io/*",
+        "https://chainle.io/*",
+        "https://www.chainle.io/*",
+        "https://maptap.gg/*",
+        "https://www.maptap.gg/*",
+        "https://linkdle.com/en*"
+      ],
+      "js": ["capture.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://krillion.io/*",
+        "https://www.krillion.io/*",
+        "https://chainle.io/*",
+        "https://www.chainle.io/*",
+        "https://maptap.gg/*",
+        "https://www.maptap.gg/*",
+        "https://linkdle.com/en*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://daily-games-leaderboard.vercel.app/extension*"],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": ["https://daily-games-leaderboard.vercel.app/*"]
+}
