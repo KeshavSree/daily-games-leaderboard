@@ -17,7 +17,7 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
 
 ## Connect Supabase
 
-1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
+1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql` and `supabase/migrations/003_owner_signup.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
 2. Copy `.env.example` to `.env.local`. Set the project URL, anon/publishable key, service role key, and app URL. The service key stays server-side; never use a `NEXT_PUBLIC_` name for it.
 3. Under Authentication, disable public signups. Set your Site URL and allow `/auth/confirm` on your local and production app origins. Configure your own SMTP provider so invitations and password resets are deliverable.
 4. The app handles Supabase's standard invitation/recovery links, including browser URL fragments. Its callback removes tokens from the address bar and saves the authenticated session in cookies. If you configure custom SMTP and want token-hash links, use these optional email templates:
@@ -41,11 +41,9 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
 
    Supabase Free projects using its default provider cannot customize email templates. Configure custom SMTP before inviting friends: the default email service restricts recipients and email volume. Set the Site URL to the environment that should receive email links. Expired or revoked invitations cannot activate membership.
 
-5. Invite the first owner yourself:
-   ```sh
-   node --env-file=.env.local scripts/invite-owner.mjs you@example.com
-   ```
-   This command sends an email. Accept it, set a display name and password, then invite friends from the leaderboard. It refuses to bootstrap a second owner.
+5. Open `/signup` and create the first account using `keshav.sreekantham@gmail.com`. Choose your display name and password. This immediately activates the owner without an email link. Only this email can claim ownership, concurrent requests are serialized, and signup closes permanently after the first successful claim. Everyone else joins through invitations. Normal login and password recovery continue afterward.
+
+   For deployments that already have an active owner, the migration starts with owner signup closed. A stalled reservation can be cleared by the project administrator only after confirming its server request is no longer running; there is no automatic expiry that could allow overlapping password updates.
 
 All data access is through server functions which verify the authenticated user and active membership. Owner actions separately require the owner role. Browser database access is denied, including for authenticated users; no service keys or private member emails are sent to normal member clients. Uploads accept PNG/JPEG/WebP up to 2 MB and use expiring signed read URLs. Omitted photos render no placeholder.
 
@@ -92,4 +90,4 @@ The database harness mocks only Supabase's auth/storage table surfaces; it runs 
 
 ## Connected development project
 
-The nonsecret Supabase project reference is in `supabase/project.json`. The two migrations have been applied to that project. Local credentials are in ignored `.env.local`; they are intentionally absent from GitHub. Authentication is invite-only with a 12-character password minimum, and the current Site URL is `http://localhost:3000`. When importing this repository into Vercel, add the variables in `.env.example` from your Supabase project, set the production app URL, and update the Supabase Site URL and redirect allowlist.
+The nonsecret Supabase project reference is in `supabase/project.json`. The three migrations have been applied to that project. Local credentials are in ignored `.env.local`; they are intentionally absent from GitHub. Authentication is invite-only with a 12-character password minimum, and the current Site URL is `http://localhost:3000`. When importing this repository into Vercel, add the variables in `.env.example` from your Supabase project, set the production app URL, and update the Supabase Site URL and redirect allowlist.

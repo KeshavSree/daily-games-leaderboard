@@ -293,3 +293,69 @@ export async function finishAuth(): Promise<{ path?: string; error?: string }> {
     return message(e);
   }
 }
+
+export async function createOwnerAccount(
+  email: string,
+  password: string,
+  name: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  email = email.trim().toLowerCase();
+  name = name.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
+    return { error: "Enter a valid email." };
+  if (!name || name.length > 30)
+    return { error: "Use a name with 1–30 characters." };
+  if (password.length < 12 || password.length > 128)
+    return { error: "Use 12–128 characters." };
+  const token = crypto.randomUUID();
+  const db = admin();
+  const { error: reserveError } = await db.rpc("begin_owner_signup", {
+    p_email: email,
+    p_token: token,
+  });
+  if (reserveError) return { error: "Account creation is unavailable." };
+  let completed = false;
+  try {
+    const { data: existing, error: lookupError } = await db
+      .from("profiles")
+      .select("id,active")
+      .eq("email", email)
+      .maybeSingle();
+    if (lookupError || existing?.active)
+      throw new Error("Account creation is unavailable.");
+    const result = existing
+      ? await db.auth.admin.updateUserById(existing.id, {
+          password,
+          email_confirm: true,
+        })
+      : await db.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
+    if (result.error || !result.data.user)
+      throw new Error("Could not create the account. Try again.");
+    const { error: finishError } = await db.rpc("finish_owner_signup", {
+      p_token: token,
+      p_user: result.data.user.id,
+      p_name: name,
+    });
+    if (finishError)
+      throw new Error("Could not activate the owner account. Try again.");
+    completed = true;
+    const client = await session();
+    const { error: loginError } = await client.auth.signInWithPassword({
+      email,
+      password,
+    });
+    revalidatePath("/");
+    revalidatePath("/login");
+    revalidatePath("/signup");
+    if (loginError) return { error: "Account created. Log in to continue." };
+    return { ok: true };
+  } catch (error) {
+    return message(error);
+  } finally {
+    if (!completed) await db.rpc("cancel_owner_signup", { p_token: token });
+  }
+}

@@ -3,15 +3,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowUpRight, LoaderCircle } from "lucide-react";
-import { login, forgotPassword, setPassword } from "@/app/actions";
+import {
+  login,
+  forgotPassword,
+  setPassword,
+  createOwnerAccount,
+} from "@/app/actions";
 export default function AuthForm({
   mode,
   ready,
   expired = false,
+  canCreateOwner = false,
 }: {
-  mode: "login" | "forgot" | "reset" | "invite";
+  mode: "login" | "forgot" | "reset" | "invite" | "signup";
   ready: boolean;
   expired?: boolean;
+  canCreateOwner?: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState(
@@ -24,6 +31,7 @@ export default function AuthForm({
     forgot: "Forgot password?",
     reset: "New password.",
     invite: "You’re in.",
+    signup: "Create account.",
   };
   return (
     <main className="auth-shell">
@@ -57,7 +65,7 @@ export default function AuthForm({
             const email = String(form.get("email") || "");
             const password = String(form.get("password") || "");
             if (
-              (mode === "reset" || mode === "invite") &&
+              (mode === "reset" || mode === "invite" || mode === "signup") &&
               password !== form.get("confirm")
             ) {
               setError("Passwords do not match.");
@@ -67,12 +75,20 @@ export default function AuthForm({
             const result =
               mode === "login"
                 ? await login(email, password)
-                : mode === "forgot"
-                  ? await forgotPassword(email)
-                  : await setPassword(
+                : mode === "signup"
+                  ? await createOwnerAccount(
+                      email,
                       password,
-                      mode === "invite" ? String(form.get("name")) : undefined,
-                    );
+                      String(form.get("name") || ""),
+                    )
+                  : mode === "forgot"
+                    ? await forgotPassword(email)
+                    : await setPassword(
+                        password,
+                        mode === "invite"
+                          ? String(form.get("name"))
+                          : undefined,
+                      );
             setBusy(false);
             if (result.error) {
               setError(result.error);
@@ -86,7 +102,7 @@ export default function AuthForm({
             }
           }}
         >
-          {mode === "invite" && (
+          {(mode === "invite" || mode === "signup") && (
             <label>
               Display name
               <input
@@ -97,7 +113,7 @@ export default function AuthForm({
               />
             </label>
           )}
-          {(mode === "login" || mode === "forgot") && (
+          {(mode === "login" || mode === "forgot" || mode === "signup") && (
             <label>
               Email
               <input
@@ -127,7 +143,7 @@ export default function AuthForm({
               />
             </label>
           )}
-          {(mode === "reset" || mode === "invite") && (
+          {(mode === "reset" || mode === "invite" || mode === "signup") && (
             <label>
               Confirm password
               <input
@@ -151,6 +167,8 @@ export default function AuthForm({
               "Log in"
             ) : mode === "forgot" ? (
               "Send reset link"
+            ) : mode === "signup" ? (
+              "Create account"
             ) : mode === "invite" ? (
               "Join leaderboard"
             ) : (
@@ -163,7 +181,11 @@ export default function AuthForm({
       <div className="auth-footer">
         {mode === "login" ? (
           <>
-            <span>Invite only</span>
+            {canCreateOwner ? (
+              <Link href="/signup">Create account</Link>
+            ) : (
+              <span>Invite only</span>
+            )}
             <Link href="/forgot-password">Forgot password?</Link>
           </>
         ) : (
