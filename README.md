@@ -20,7 +20,7 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
 1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
 2. Copy `.env.example` to `.env.local`. Set the project URL, anon/publishable key, service role key, and app URL. The service key stays server-side; never use a `NEXT_PUBLIC_` name for it.
 3. Under Authentication, disable public signups. Set your Site URL and allow `/auth/confirm` on your local and production app origins. Configure your own SMTP provider so invitations and password resets are deliverable.
-4. Set these email template links (replace the existing confirmation URL link):
+4. The app handles Supabase's standard invitation/recovery links, including browser URL fragments. Its callback removes tokens from the address bar and saves the authenticated session in cookies. If you configure custom SMTP and want token-hash links, use these optional email templates:
 
    Invite user:
 
@@ -39,7 +39,7 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
    >
    ```
 
-   Set the Site URL to whichever environment should receive emails. Token-hash links work across browsers; no browser-local PKCE verifier is required for these templates. Expired or revoked links cannot activate a membership. Pending invitations can be resent from the Invite Member dialog.
+   Supabase Free projects using its default provider cannot customize email templates. Configure custom SMTP before inviting friends: the default email service restricts recipients and email volume. Set the Site URL to the environment that should receive email links. Expired or revoked invitations cannot activate membership.
 
 5. Invite the first owner yourself:
    ```sh
@@ -61,11 +61,11 @@ All data access is through server functions which verify the authenticated user 
 
 ## Games
 
-| Game    | Identity                                                       | Score                       | Better |
-| ------- | -------------------------------------------------------------- | --------------------------- | ------ |
-| Krillion | `Krillion #126` | `390` on the following line | Higher |
-| MapTap  | Share month/day resolved against the currently open group date | `Final score: 959`          | Higher |
-| Chainle | `Chainle #91`                                                  | `3,457` from the first line | Higher |
+| Game     | Identity                                                       | Score                       | Better |
+| -------- | -------------------------------------------------------------- | --------------------------- | ------ |
+| Krillion | `Krillion #126`                                                | `390` on the following line | Higher |
+| MapTap   | Share month/day resolved against the currently open group date | `Final score: 959`          | Higher |
+| Chainle  | `Chainle #91`                                                  | `3,457` from the first line | Higher |
 
 MapTap round scores/emojis and Chainle percentile/colored squares are ignored. Validation allows MapTap 0–1,000, Chainle 0–5,000, and Krillion 0–700. Krillion #126 is anchored to November 18, 2026; change `settings.krillion_anchor_date` / `krillion_anchor_number` if required. Only today's puzzle can be submitted; one score per member/game/date, replaceable until cutoff. Copies containing multiple results are rejected. Scores remain an honor system.
 
@@ -89,3 +89,7 @@ npm run build
 ```
 
 The database harness mocks only Supabase's auth/storage table surfaces; it runs the actual migration and stored procedures. It checks invitation gating, private table/function permissions, duplicate submission handling, replacement/deletion, cutoff rejection, cross-game opening snapshots, singleton behavior, chronological catch-up, and retry idempotency. It does not contact a live Supabase project or send emails. Live email delivery, real Supabase storage, concurrent hosted requests, and Vercel scheduling need the deployment smoke test above.
+
+## Connected development project
+
+The nonsecret Supabase project reference is in `supabase/project.json`. The two migrations have been applied to that project. Local credentials are in ignored `.env.local`; they are intentionally absent from GitHub. Authentication is invite-only with a 12-character password minimum, and the current Site URL is `http://localhost:3000`. When importing this repository into Vercel, add the variables in `.env.example` from your Supabase project, set the production app URL, and update the Supabase Site URL and redirect allowlist.

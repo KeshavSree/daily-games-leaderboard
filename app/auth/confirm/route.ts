@@ -5,6 +5,10 @@ export async function GET(request: NextRequest) {
   const token_hash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type");
   const code = url.searchParams.get("code");
+  if (!token_hash && !code && !url.searchParams.has("error")) {
+    // Browsers carry the provider URL fragment through this redirect.
+    return NextResponse.redirect(new URL("/auth/complete", url.origin));
+  }
   const db = await session();
   if (token_hash && (type === "invite" || type === "recovery")) {
     const { error } = await db.auth.verifyOtp({ token_hash, type });

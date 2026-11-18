@@ -274,3 +274,22 @@ export async function setPassword(
     return message(e);
   }
 }
+
+export async function finishAuth(): Promise<{ path?: string; error?: string }> {
+  try {
+    const db = await session();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    if (!user) return { error: "Link expired." };
+    const { data: profile, error } = await admin()
+      .from("profiles")
+      .select("active")
+      .eq("id", user.id)
+      .single();
+    if (error || !profile) return { error: "Invitation required." };
+    return { path: profile.active ? "/reset-password" : "/accept-invite" };
+  } catch (e) {
+    return message(e);
+  }
+}
