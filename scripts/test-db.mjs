@@ -18,6 +18,10 @@ try {
     new URL("../supabase/migrations/004_invitation_links.sql", import.meta.url),
     "utf8",
   );
+  const permanentMigration = await readFile(
+    new URL("../supabase/migrations/005_permanent_scores.sql", import.meta.url),
+    "utf8",
+  );
   const test = (
     await readFile(new URL("../tests/database.sql", import.meta.url), "utf8")
   )
@@ -31,7 +35,7 @@ try {
         "\n" +
         ownerMigration +
         "\n" +
-        linkMigration,
+        linkMigration + "\n" + permanentMigration,
     );
   await db.exec(test);
   console.log(

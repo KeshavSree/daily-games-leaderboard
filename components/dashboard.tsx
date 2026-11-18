@@ -14,7 +14,6 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import {
-  deleteScore,
   createInviteLink,
   logOut,
   saveProfile,
@@ -186,6 +185,8 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
       try {
         const parsed = parseScore(raw, data.date, data.settings);
         if (closed) throw new Error("Day closed. Reset the demo to try again.");
+        if (myScores.some((score) => score.game === parsed.game && score.date === parsed.date))
+          throw new Error("Already submitted. Scores cannot be changed.");
         if (!data.demo) {
           const result = await submitScore(raw);
           if (result.error) throw new Error(result.error);
@@ -194,14 +195,7 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
           ...d,
           latestSubmission: { ...parsed, userId: d.me, raw },
           submissions: [
-            ...d.submissions.filter(
-              (s) =>
-                !(
-                  s.userId === d.me &&
-                  s.game === parsed.game &&
-                  s.date === parsed.date
-                ),
-            ),
+            ...d.submissions,
             { ...parsed, userId: d.me, raw },
           ],
         }));
@@ -211,27 +205,6 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
       } catch (e) {
         setError(e instanceof Error ? e.message : "Could not submit score.");
       }
-    });
-  }
-  function remove(game: Game) {
-    setError("");
-    startTransition(async () => {
-      if (data.demo) {
-        setData((d) => ({
-          ...d,
-          submissions: d.submissions.filter(
-            (s) => !(s.userId === d.me && s.game === game),
-          ),
-        }));
-      } else {
-        const result = await deleteScore(game, data.date);
-        if (result.error) {
-          setError(result.error);
-          return;
-        }
-        router.refresh();
-      }
-      setNotice("Score removed");
     });
   }
   return (
@@ -480,27 +453,6 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
                     </div>
                     <div className="score-actions">
                       <strong>{num(lastScore.score)}</strong>
-                      {lastScore.date === data.date && !closed && (
-                        <>
-                          <button
-                            className="edit-score"
-                            onClick={() => {
-                              setRaw(lastScore.raw);
-                              textarea.current?.focus();
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="icon-button"
-                            aria-label={`Remove ${gameNames[lastScore.game]} score`}
-                            disabled={busy}
-                            onClick={() => remove(lastScore.game)}
-                          >
-                            <X size={13} />
-                          </button>
-                        </>
-                      )}
                     </div>
                   </div>
                 </section>

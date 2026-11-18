@@ -4,7 +4,7 @@ import { invitationHash } from "@/lib/invitation-links";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { admin, appUrl, member, session } from "@/lib/supabase";
-import { dateInZone, parseScore, type Game } from "@/lib/games";
+import { dateInZone, parseScore } from "@/lib/games";
 const message = (e: unknown) => ({
   error: e instanceof Error ? e.message : "Something went wrong. Try again.",
 });
@@ -40,24 +40,6 @@ export async function submitScore(
       p_raw: raw,
     });
     if (result.error) throw new Error(result.error.message);
-    revalidatePath("/");
-    return { ok: true };
-  } catch (e) {
-    return message(e);
-  }
-}
-export async function deleteScore(
-  game: Game,
-  date: string,
-): Promise<{ ok?: boolean; error?: string }> {
-  try {
-    const { user, db } = await member();
-    const { error } = await db.rpc("delete_score", {
-      p_user: user.id,
-      p_game: game,
-      p_date: date,
-    });
-    if (error) throw new Error(error.message);
     revalidatePath("/");
     return { ok: true };
   } catch (e) {

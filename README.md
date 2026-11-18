@@ -17,7 +17,7 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
 
 ## Connect Supabase
 
-1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql` `supabase/migrations/003_owner_signup.sql`, and `supabase/migrations/004_invitation_links.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
+1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql` `supabase/migrations/003_owner_signup.sql`, `supabase/migrations/004_invitation_links.sql`, and `supabase/migrations/005_permanent_scores.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
 2. Copy `.env.example` to `.env.local`. Set the project URL, anon/publishable key, service role key, and app URL. The service key stays server-side; never use a `NEXT_PUBLIC_` name for it.
 3. Under Authentication, disable public signups. Set your Site URL and allow `/auth/confirm` on your local and production app origins. Configure your own SMTP provider for password recovery emails. Member invitations use copyable links and do not need email delivery.
 4. The app handles Supabase's standard invitation/recovery links, including browser URL fragments. Its callback removes tokens from the address bar and saves the authenticated session in cookies. If you configure custom SMTP and want token-hash links, use these optional email templates:
@@ -65,7 +65,7 @@ All data access is through server functions which verify the authenticated user 
 | MapTap   | Share month/day resolved against the currently open group date | `Final score: 959`          | Higher |
 | Chainle  | `Chainle #91`                                                  | `3,457` from the first line | Higher |
 
-MapTap round scores/emojis and Chainle percentile/colored squares are ignored. Validation allows MapTap 0–1,000, Chainle 0–5,000, and Krillion 0–700. Krillion #126 is anchored to November 18, 2026; change `settings.krillion_anchor_date` / `krillion_anchor_number` if required. Only today's puzzle can be submitted; one score per member/game/date, replaceable until cutoff. Copies containing multiple results are rejected. Scores remain an honor system.
+MapTap round scores/emojis and Chainle percentile/colored squares are ignored. Validation allows MapTap 0–1,000, Chainle 0–5,000, and Krillion 0–700. Krillion #126 is anchored to November 18, 2026; change `settings.krillion_anchor_date` / `krillion_anchor_number` if required. Only today's puzzle can be submitted; one permanent score per member/game/date; submitted scores cannot be edited or deleted. Copies containing multiple results are rejected. Scores remain an honor system.
 
 **Chainle date assumption:** the supplied #91 example is anchored to November 18, 2026. This mapping was not independently confirmed with Chainle's live puzzle calendar. Before using live scores, verify one puzzle/date pair and update `settings.chainle_anchor_date` / `chainle_anchor_number` if needed. All subsequent puzzle IDs are computed from that pair, not from a user's submission date. Archived puzzles cannot enter today's contest. The group day is initially `America/Indiana/Indianapolis`; the group must use this shared day convention even when traveling.
 
@@ -86,7 +86,7 @@ npm run typecheck
 npm run build
 ```
 
-The database harness mocks only Supabase's auth/storage table surfaces; it runs the actual migration and stored procedures. It checks invitation gating, private table/function permissions, duplicate submission handling, replacement/deletion, cutoff rejection, cross-game opening snapshots, singleton behavior, chronological catch-up, and retry idempotency. It does not contact a live Supabase project or send emails. Live email delivery, real Supabase storage, concurrent hosted requests, and Vercel scheduling need the deployment smoke test above.
+The database harness mocks only Supabase's auth/storage table surfaces; it runs the actual migration and stored procedures. It checks invitation gating, private table/function permissions, duplicate submission handling, replacement/deletion rejection, cutoff rejection, cross-game opening snapshots, singleton behavior, chronological catch-up, and retry idempotency. It does not contact a live Supabase project or send emails. Live email delivery, real Supabase storage, concurrent hosted requests, and Vercel scheduling need the deployment smoke test above.
 
 ## Connected development project
 

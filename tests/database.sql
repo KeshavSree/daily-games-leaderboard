@@ -15,15 +15,15 @@ if has_table_privilege('authenticated','profiles','select') then raise exception
 if has_function_privilege('anon','public.settle_days()','execute') then raise exception 'Public settlement allowed';end if;
 end;$$;
 update profiles set active=true;
--- Repeated submissions overwrite the same row, and closed days reject writes.
+-- Submitted scores are permanent, and closed days reject writes.
 do $$declare today date:=(now() at time zone 'America/Indiana/Indianapolis')::date;begin
 perform submit_score('00000000-0000-0000-0000-000000000001','maptap',today,today::text,959,'share');
-perform submit_score('00000000-0000-0000-0000-000000000001','maptap',today,today::text,959,'share');
+begin perform submit_score('00000000-0000-0000-0000-000000000001','maptap',today,today::text,959,'share');raise exception 'Duplicate accepted';exception when raise_exception then if sqlerrm<>'Already submitted. Scores cannot be changed.' then raise;end if;end;
 if (select count(*) from submissions)<>1 then raise exception 'Duplicate submission';end if;
-perform submit_score('00000000-0000-0000-0000-000000000001','maptap',today,today::text,960,'replacement');
-if (select score from submissions limit 1)<>960 then raise exception 'Replacement failed';end if;
+begin perform submit_score('00000000-0000-0000-0000-000000000001','maptap',today,today::text,960,'replacement');raise exception 'Replacement accepted';exception when raise_exception then if sqlerrm<>'Already submitted. Scores cannot be changed.' then raise;end if;end;
+if (select score from submissions limit 1)<>959 then raise exception 'Original score changed';end if;
 begin perform submit_score('00000000-0000-0000-0000-000000000001','maptap',today-1,(today-1)::text,1,'late');raise exception 'Late write allowed';exception when raise_exception then if sqlerrm='Late write allowed' then raise;end if;end;
-perform delete_score('00000000-0000-0000-0000-000000000001','maptap',today);
+begin perform delete_score('00000000-0000-0000-0000-000000000001','maptap',today);raise exception 'Deletion accepted';exception when raise_exception then if sqlerrm<>'Submitted scores cannot be deleted.' then raise;end if;end;
 end;$$;
 insert into submissions(user_id,game,puzzle_date,puzzle_key,score,raw_text) values
 ('00000000-0000-0000-0000-000000000001','maptap','2020-01-01','2020-01-01',959,''),
@@ -52,7 +52,7 @@ perform submit_score('00000000-0000-0000-0000-000000000001','krillion',today,num
 if not exists(select 1 from submissions where game='krillion' and score=390 and puzzle_key=number::text) then raise exception 'Krillion submission missing';end if;
 begin perform submit_score('00000000-0000-0000-0000-000000000001','krillion',today,(number-1)::text,390,'old puzzle');raise exception 'Wrong Krillion puzzle accepted';exception when raise_exception then if sqlerrm='Wrong Krillion puzzle accepted' then raise;end if;end;
 begin perform submit_score('00000000-0000-0000-0000-000000000001','krillion',today,number::text,701,'invalid');raise exception 'Invalid Krillion score accepted';exception when check_violation then null;end;
-perform delete_score('00000000-0000-0000-0000-000000000001','krillion',today);
+begin perform delete_score('00000000-0000-0000-0000-000000000001','krillion',today);raise exception 'Deletion accepted';exception when raise_exception then if sqlerrm<>'Submitted scores cannot be deleted.' then raise;end if;end;
 end;$$;
 insert into submissions(user_id,game,puzzle_date,puzzle_key,score,raw_text) values
 ('00000000-0000-0000-0000-000000000001','krillion','2020-01-03','3',390,''),
