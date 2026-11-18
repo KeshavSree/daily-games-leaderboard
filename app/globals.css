@@ -994,3 +994,6 @@ input::file-selector-button {
 .extension-nav { display: flex; align-items: center; }
 .extension-install { line-height: 1.7; padding-left: 20px; }
 .extension-install li { padding: 5px 0; }
+
+.extension-content { border-top: 1px solid var(--line); padding-top: 24px; }
+.extension-content p { margin-top: 24px; }

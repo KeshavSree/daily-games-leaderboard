@@ -76,12 +76,20 @@ function Modal({
     </dialog>
   );
 }
-export default function Dashboard({ initial }: { initial: DashboardData }) {
+export default function Dashboard({
+  initial,
+  initialTab = "leaderboard",
+}: {
+  initial: DashboardData;
+  initialTab?: "leaderboard" | "extension";
+}) {
   const router = useRouter();
   const [data, setData] = useState(initial);
   const [hydrated, setHydrated] = useState(false);
   const closed = false;
-  const [tab, setTab] = useState<"leaderboard" | "history">("leaderboard");
+  const [tab, setTab] = useState<"leaderboard" | "history" | "extension">(
+    initialTab,
+  );
   const [filter, setFilter] = useState<"all" | Game>("all");
   const [raw, setRaw] = useState("");
   const [notice, setNotice] = useState("");
@@ -259,9 +267,12 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
               ))}
             </div>
           </details>
-          <a className="nav-link extension-nav" href="/extension">
+          <button
+            className={tab === "extension" ? "nav-link active" : "nav-link"}
+            onClick={() => setTab("extension")}
+          >
             Extension
-          </a>
+          </button>
         </nav>
         <div className="header-actions">
           {me.role === "owner" && (
@@ -284,7 +295,11 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
         <div className="page-heading">
           <div>
             <h1>
-              {tab === "leaderboard" ? "Leaderboard" : "Your history"}
+              {tab === "leaderboard"
+                ? "Leaderboard"
+                : tab === "history"
+                  ? "Your history"
+                  : "Extension"}
               <span className="heading-period">.</span>
             </h1>
           </div>
@@ -466,6 +481,29 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
               )}
             </aside>
           </div>
+        ) : tab === "extension" ? (
+          <section className="extension-content">
+            <a
+              className="text-link"
+              href="/downloads/daily-extension.zip"
+              download
+            >
+              Download extension
+            </a>
+            <ol className="extension-install">
+              <li>Unzip the download.</li>
+              <li>
+                Open <code>chrome://extensions</code> (Edge:{" "}
+                <code>edge://extensions</code>) and enable Developer mode.
+              </li>
+              <li>Choose Load unpacked and select the unzipped folder.</li>
+              <li>Refresh your game tabs.</li>
+            </ol>
+            <p className="muted">
+              Finish a game, then click Submit to Daily. If needed, use its
+              Share button.
+            </p>
+          </section>
         ) : (
           <section className="history-section">
             <div className="section-toolbar">

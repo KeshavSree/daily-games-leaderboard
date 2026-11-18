@@ -6,8 +6,15 @@ import { configured, isDemo, member, admin } from "@/lib/supabase";
 import { dateInZone } from "@/lib/games";
 import type { DashboardData } from "@/lib/types";
 export const dynamic = "force-dynamic";
-export default async function Home() {
-  if (isDemo()) return <Dashboard initial={demoData()} />;
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const initialTab =
+    (await searchParams).tab === "extension" ? "extension" : "leaderboard";
+  if (isDemo())
+    return <Dashboard initial={demoData()} initialTab={initialTab} />;
   if (!configured())
     return (
       <main className="auth-shell">
@@ -141,5 +148,5 @@ export default async function Home() {
     ),
     invites: [],
   };
-  return <Dashboard initial={initial} />;
+  return <Dashboard initial={initial} initialTab={initialTab} />;
 }
