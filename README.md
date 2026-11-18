@@ -17,9 +17,9 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
 
 ## Connect Supabase
 
-1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql` and `supabase/migrations/003_owner_signup.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
+1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql` `supabase/migrations/003_owner_signup.sql`, and `supabase/migrations/004_invitation_links.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
 2. Copy `.env.example` to `.env.local`. Set the project URL, anon/publishable key, service role key, and app URL. The service key stays server-side; never use a `NEXT_PUBLIC_` name for it.
-3. Under Authentication, disable public signups. Set your Site URL and allow `/auth/confirm` on your local and production app origins. Configure your own SMTP provider so invitations and password resets are deliverable.
+3. Under Authentication, disable public signups. Set your Site URL and allow `/auth/confirm` on your local and production app origins. Configure your own SMTP provider for password recovery emails. Member invitations use copyable links and do not need email delivery.
 4. The app handles Supabase's standard invitation/recovery links, including browser URL fragments. Its callback removes tokens from the address bar and saves the authenticated session in cookies. If you configure custom SMTP and want token-hash links, use these optional email templates:
 
    Invite user:
@@ -39,7 +39,7 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
    >
    ```
 
-   Supabase Free projects using its default provider cannot customize email templates. Configure custom SMTP before inviting friends: the default email service restricts recipients and email volume. Set the Site URL to the environment that should receive email links. Expired or revoked invitations cannot activate membership.
+   Supabase Free projects using its default provider cannot customize email templates. Configure custom SMTP for password recovery emails: the default email service restricts recipients and email volume. Member invitations are shared directly and do not require SMTP. Set the Site URL to the environment that should receive email links. Expired or revoked invitations cannot activate membership.
 
 5. Open `/signup` and create the first account using `keshav.sreekantham@gmail.com`. Choose your display name and password. This immediately activates the owner without an email link. Only this email can claim ownership, concurrent requests are serialized, and signup closes permanently after the first successful claim. Everyone else joins through invitations. Normal login and password recovery continue afterward.
 
@@ -53,7 +53,7 @@ All data access is through server functions which verify the authenticated user 
 2. Set every variable from `.env.example` in Vercel. Use the production origin for `NEXT_PUBLIC_APP_URL`. Keep `DEMO_MODE=false`.
 3. Generate a random `CRON_SECRET` (for example `openssl rand -hex 32`) and add it to Vercel. Do not put it in source control. Vercel includes it in the Authorization header for the scheduled endpoint.
 4. Update the Supabase Site URL and redirect allowlist for your deployed domain. Redeploy after adding environment variables.
-5. Smoke-test invitation acceptance, login, logout, password reset, photo upload/removal, submitting all three games from two accounts, owner access restrictions, and scheduled settlement.
+5. Smoke-test single-use link signup, login, logout, password reset, photo upload/removal, submitting all three games from two accounts, owner access restrictions, and scheduled settlement.
 
 `vercel.json` schedules `/api/cron/settle` at **06:05 UTC daily**, after Indianapolis midnight in both winter and summer. Submissions close at midnight independently of when the job executes. This schedule deliberately does not promise settlement at exactly midnight. The next successful invocation catches up all missed dates chronologically. To settle closer to midnight, use a suitably frequent supported schedule; the handler only processes closed days. If you change the group timezone, update the schedule accordingly.
 
@@ -90,4 +90,10 @@ The database harness mocks only Supabase's auth/storage table surfaces; it runs 
 
 ## Connected development project
 
-The nonsecret Supabase project reference is in `supabase/project.json`. The three migrations have been applied to that project. Local credentials are in ignored `.env.local`; they are intentionally absent from GitHub. Authentication is invite-only with a 12-character password minimum, and the current Site URL is `http://localhost:3000`. When importing this repository into Vercel, add the variables in `.env.example` from your Supabase project, set the production app URL, and update the Supabase Site URL and redirect allowlist.
+The nonsecret Supabase project reference is in `supabase/project.json`. The four migrations have been applied to that project. Local credentials are in ignored `.env.local`; they are intentionally absent from GitHub. Authentication is invite-only with a 12-character password minimum, and the current Site URL is `http://localhost:3000`. When importing this repository into Vercel, add the variables in `.env.example` from your Supabase project, set the production app URL, and update the Supabase Site URL and redirect allowlist.
+
+## Member invitation links
+
+The owner opens **Invite Member**, chooses **Create invite link**, then **Copy link** and sends it themselves. Each link is valid for seven days and can create one member account. Following a link does not consume it; a successful signup does. The recipient chooses their name, email, and password and is signed in immediately. Existing account passwords cannot be changed through invitation links.
+
+Only SHA-256 token hashes are stored. Row-level security and server-side owner checks protect creation. Database row locks reserve each invitation during signup, and account activation and link consumption commit together. Failed signup releases the reservation; there is no automatic reservation expiry that could permit overlapping account creation. Password recovery still uses the configured email provider.

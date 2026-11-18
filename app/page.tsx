@@ -40,41 +40,33 @@ export default async function Home() {
     krillionAnchorNumber: s.krillion_anchor_number,
   };
   const date = dateInZone(new Date(), settings.timezone);
-  const [profiles, scores, history, latest, invites, lastScore] =
-    await Promise.all([
-      db
-        .from("profiles")
-        .select("*")
-        .eq("active", true)
-        .order("rating", { ascending: false }),
-      db.from("submissions").select("*").eq("puzzle_date", date),
-      db
-        .from("rating_events")
-        .select("*")
-        .eq("user_id", current.user.id)
-        .order("puzzle_date", { ascending: false })
-        .limit(100),
-      db
-        .from("settlements")
-        .select("puzzle_date")
-        .order("puzzle_date", { ascending: false })
-        .limit(1),
-      current.profile.role === "owner"
-        ? db
-            .from("invites")
-            .select("*")
-            .order("created_at", { ascending: false })
-            .limit(100)
-        : Promise.resolve({ data: [], error: null }),
-      db
-        .from("submissions")
-        .select("*")
-        .eq("user_id", current.user.id)
-        .order("updated_at", { ascending: false })
-        .order("game")
-        .limit(100),
-    ]);
-  for (const result of [profiles, scores, history, latest, invites, lastScore])
+  const [profiles, scores, history, latest, lastScore] = await Promise.all([
+    db
+      .from("profiles")
+      .select("*")
+      .eq("active", true)
+      .order("rating", { ascending: false }),
+    db.from("submissions").select("*").eq("puzzle_date", date),
+    db
+      .from("rating_events")
+      .select("*")
+      .eq("user_id", current.user.id)
+      .order("puzzle_date", { ascending: false })
+      .limit(100),
+    db
+      .from("settlements")
+      .select("puzzle_date")
+      .order("puzzle_date", { ascending: false })
+      .limit(1),
+    db
+      .from("submissions")
+      .select("*")
+      .eq("user_id", current.user.id)
+      .order("updated_at", { ascending: false })
+      .order("game")
+      .limit(100),
+  ]);
+  for (const result of [profiles, scores, history, latest, lastScore])
     if (result.error) throw new Error("Could not load leaderboard.");
   const last = latest.data?.[0]?.puzzle_date;
   const changes = last
@@ -147,12 +139,7 @@ export default async function Home() {
         rating: Number(x.rating_after),
       })),
     ),
-    invites: (invites.data || []).map((x) => ({
-      id: x.id,
-      email: x.email,
-      expires: x.expires_at,
-      accepted: !!x.accepted_at,
-    })),
+    invites: [],
   };
   return <Dashboard initial={initial} />;
 }

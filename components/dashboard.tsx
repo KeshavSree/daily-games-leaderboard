@@ -15,9 +15,8 @@ import {
 } from "lucide-react";
 import {
   deleteScore,
-  inviteFriend,
+  createInviteLink,
   logOut,
-  revokeInvite,
   saveProfile,
   submitScore,
 } from "@/app/actions";
@@ -91,6 +90,8 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
   const [modal, setModal] = useState<"profile" | "invites" | null>(null);
   const [modalError, setModalError] = useState("");
   const [modalNotice, setModalNotice] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+  const [inviteCopied, setInviteCopied] = useState(false);
   const [removePhoto, setRemovePhoto] = useState(false);
   const gamesMenu = useRef<HTMLDetailsElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -172,6 +173,10 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
     setModalError("");
     setModalNotice("");
     setRemovePhoto(false);
+    if (which === "invites") {
+      setInviteLink("");
+      setInviteCopied(false);
+    }
     setModal(which);
   }
   function submit() {
@@ -683,98 +688,76 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
       {modal === "invites" && (
         <Modal title="Invite Member" close={() => setModal(null)}>
           {data.demo && (
-            <p className="notice">Connect Supabase to send invitations.</p>
+            <p className="notice">Connect Supabase to create invite links.</p>
           )}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const form = e.currentTarget;
-              const email = String(new FormData(form).get("email"));
-              setModalError("");
-              setModalNotice("");
-              startTransition(async () => {
-                const result = await inviteFriend(email);
-                if (result.error) {
-                  setModalError(result.error);
-                  return;
-                }
-                form.reset();
-                setModalNotice("Invitation sent");
-                router.refresh();
-              });
-            }}
-          >
-            <label>
-              Email
-              <input
-                name="email"
-                type="email"
-                placeholder="friend@example.com"
-                required
-                disabled={data.demo}
-              />
-            </label>
-            <button className="primary full" disabled={data.demo || busy}>
-              Send invitation
+          {inviteLink ? (
+            <>
+              <label className="invite-url">
+                Invite link
+                <input
+                  aria-label="Invite link"
+                  value={inviteLink}
+                  readOnly
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+              </label>
+              <button
+                className="primary full"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(inviteLink);
+                    setInviteCopied(true);
+                  } catch {
+                    setModalError("Select and copy the link above.");
+                  }
+                }}
+              >
+                {inviteCopied ? "Copied" : "Copy link"}
+                <Check size={16} />
+              </button>
+              <p className="tiny muted invite-expiry">
+                One use · expires in 7 days
+              </p>
+              <button
+                className="text-link"
+                disabled={busy}
+                onClick={() => {
+                  setInviteLink("");
+                  setInviteCopied(false);
+                  setModalError("");
+                }}
+              >
+                Create another link
+              </button>
+            </>
+          ) : (
+            <button
+              className="primary full"
+              disabled={data.demo || busy}
+              onClick={() => {
+                setModalError("");
+                startTransition(async () => {
+                  const result = await createInviteLink();
+                  if (result.error) {
+                    setModalError(result.error);
+                    return;
+                  }
+                  if (result.url) {
+                    setInviteLink(result.url);
+                    setInviteCopied(false);
+                  }
+                });
+              }}
+            >
+              {busy ? "Creating…" : "Create invite link"}
               <ArrowUpRight size={16} />
             </button>
-          </form>
+          )}
           {modalError && (
             <p role="alert" className="error">
               {modalError}
             </p>
           )}
-          {modalNotice && (
-            <p role="status" className="success">
-              {modalNotice}
-            </p>
-          )}
-          <div className="member-list">
-            {data.invites
-              .filter((i) => !i.accepted)
-              .map((invite) => (
-                <div className="member-row" key={invite.id}>
-                  <span>
-                    {invite.email}
-                    <small className="muted">
-                      {new Date(invite.expires) < new Date()
-                        ? "Expired"
-                        : "Invited"}
-                    </small>
-                  </span>
-                  <button
-                    className="icon-button"
-                    aria-label={`Revoke invite for ${invite.email}`}
-                    disabled={busy}
-                    onClick={() =>
-                      startTransition(async () => {
-                        const result = await revokeInvite(invite.id);
-                        if (result.error) setModalError(result.error);
-                        else router.refresh();
-                      })
-                    }
-                  >
-                    <X size={16} />
-                  </button>
-                  <button
-                    className="edit-score"
-                    disabled={busy}
-                    onClick={() =>
-                      startTransition(async () => {
-                        const result = await inviteFriend(invite.email);
-                        if (result.error) setModalError(result.error);
-                        else {
-                          setModalNotice("Invitation sent");
-                          router.refresh();
-                        }
-                      })
-                    }
-                  >
-                    Resend
-                  </button>
-                </div>
-              ))}
-          </div>
         </Modal>
       )}
     </div>

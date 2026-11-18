@@ -1,4 +1,6 @@
 "use server";
+import { randomBytes } from "node:crypto";
+import { invitationHash } from "@/lib/invitation-links";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { admin, appUrl, member, session } from "@/lib/supabase";
@@ -105,78 +107,6 @@ export async function saveProfile(
     }
     if (profile.avatar_path && profile.avatar_path !== path)
       await db.storage.from("avatars").remove([profile.avatar_path]);
-    revalidatePath("/");
-    return { ok: true };
-  } catch (e) {
-    return message(e);
-  }
-}
-export async function inviteFriend(
-  email: string,
-): Promise<{ ok?: boolean; error?: string }> {
-  try {
-    const { db } = await member(true);
-    email = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
-      throw new Error("Enter a valid email.");
-    const { data: existing } = await db
-      .from("profiles")
-      .select("id,active")
-      .eq("email", email)
-      .maybeSingle();
-    if (existing?.active) throw new Error("This account is already a member.");
-    const { error } = await db
-      .from("invites")
-      .upsert(
-        {
-          email,
-          expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
-          accepted_at: null,
-        },
-        { onConflict: "email" },
-      )
-      .select()
-      .single();
-    if (error) throw new Error("An invitation already exists for this email.");
-    const result = existing
-      ? await (
-          await session()
-        ).auth.resetPasswordForEmail(email, {
-          redirectTo: appUrl() + "/auth/confirm",
-        })
-      : await db.auth.admin.inviteUserByEmail(email, {
-          redirectTo: appUrl() + "/auth/confirm",
-        });
-    if (result.error)
-      throw new Error(
-        "Could not send invitation. Check email delivery settings, then resend.",
-      );
-    revalidatePath("/");
-    return { ok: true };
-  } catch (e) {
-    return message(e);
-  }
-}
-export async function revokeInvite(
-  id: string,
-): Promise<{ ok?: boolean; error?: string }> {
-  try {
-    const { db } = await member(true);
-    const { data: invite, error } = await db
-      .from("invites")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error || !invite || invite.accepted_at)
-      throw new Error("Invitation is no longer pending.");
-    const result = await db
-      .from("invites")
-      .delete()
-      .eq("id", id)
-      .is("accepted_at", null)
-      .select("id");
-    if (result.error || !result.data?.length)
-      throw new Error("Could not revoke invitation.");
     revalidatePath("/");
     return { ok: true };
   } catch (e) {
@@ -357,5 +287,104 @@ export async function createOwnerAccount(
     return message(error);
   } finally {
     if (!completed) await db.rpc("cancel_owner_signup", { p_token: token });
+  }
+}
+
+export async function createInviteLink(): Promise<{
+  url?: string;
+  error?: string;
+}> {
+  try {
+    const { user, db } = await member(true);
+    const token = randomBytes(32).toString("base64url");
+    const { error } = await db
+      .from("member_invites")
+      .insert({ token_hash: invitationHash(token), created_by: user.id });
+    if (error) throw new Error("Could not create invite. Try again.");
+    return { url: appUrl() + "/join/" + token };
+  } catch (error) {
+    return message(error);
+  }
+}
+
+export async function joinWithInvite(
+  token: string,
+  email: string,
+  password: string,
+  name: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  const hash = invitationHash(token);
+  if (!hash) return { error: "Invite unavailable." };
+  email = email.trim().toLowerCase();
+  name = name.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
+    return { error: "Enter a valid email." };
+  if (!name || name.length > 30)
+    return { error: "Use a name with 1–30 characters." };
+  if (password.length < 12 || password.length > 128)
+    return { error: "Use 12–128 characters." };
+  const db = admin();
+  const reservation = crypto.randomUUID();
+  const { error: reserveError } = await db.rpc("reserve_member_invite", {
+    p_hash: hash,
+    p_reservation: reservation,
+  });
+  if (reserveError)
+    return { error: "This invite has expired or already been used." };
+  let createdUser: string | undefined;
+  let completed = false;
+  try {
+    const { data: existing, error: lookupError } = await db
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (lookupError) throw new Error("Could not check account. Try again.");
+    if (existing)
+      throw new Error("This email already has an account. Log in instead.");
+    const { data, error } = await db.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (error || !data.user)
+      throw new Error(
+        "Could not create account. Try another email or try again.",
+      );
+    createdUser = data.user.id;
+    const { error: completeError } = await db.rpc("complete_member_invite", {
+      p_hash: hash,
+      p_reservation: reservation,
+      p_user: createdUser,
+      p_name: name,
+    });
+    if (completeError) throw new Error("Could not join. Try again.");
+    completed = true;
+    const client = await session();
+    const { error: loginError } = await client.auth.signInWithPassword({
+      email,
+      password,
+    });
+    revalidatePath("/");
+    if (loginError) return { error: "Account created. Log in to continue." };
+    return { ok: true };
+  } catch (error) {
+    return message(error);
+  } finally {
+    if (!completed) {
+      if (createdUser) {
+        const { data: profile } = await db
+          .from("profiles")
+          .select("active")
+          .eq("id", createdUser)
+          .single();
+        if (profile && !profile.active)
+          await db.auth.admin.deleteUser(createdUser);
+      }
+      await db.rpc("release_member_invite", {
+        p_hash: hash,
+        p_reservation: reservation,
+      });
+    }
   }
 }

@@ -8,17 +8,20 @@ import {
   forgotPassword,
   setPassword,
   createOwnerAccount,
+  joinWithInvite,
 } from "@/app/actions";
 export default function AuthForm({
   mode,
   ready,
   expired = false,
   canCreateOwner = false,
+  invitationToken,
 }: {
-  mode: "login" | "forgot" | "reset" | "invite" | "signup";
+  mode: "login" | "forgot" | "reset" | "invite" | "signup" | "join";
   ready: boolean;
   expired?: boolean;
   canCreateOwner?: boolean;
+  invitationToken?: string;
 }) {
   const router = useRouter();
   const [error, setError] = useState(
@@ -32,6 +35,7 @@ export default function AuthForm({
     reset: "New password.",
     invite: "You’re in.",
     signup: "Create account.",
+    join: "Join leaderboard.",
   };
   return (
     <main className="auth-shell">
@@ -65,7 +69,10 @@ export default function AuthForm({
             const email = String(form.get("email") || "");
             const password = String(form.get("password") || "");
             if (
-              (mode === "reset" || mode === "invite" || mode === "signup") &&
+              (mode === "reset" ||
+                mode === "invite" ||
+                mode === "signup" ||
+                mode === "join") &&
               password !== form.get("confirm")
             ) {
               setError("Passwords do not match.");
@@ -75,20 +82,27 @@ export default function AuthForm({
             const result =
               mode === "login"
                 ? await login(email, password)
-                : mode === "signup"
-                  ? await createOwnerAccount(
+                : mode === "join"
+                  ? await joinWithInvite(
+                      invitationToken || "",
                       email,
                       password,
                       String(form.get("name") || ""),
                     )
-                  : mode === "forgot"
-                    ? await forgotPassword(email)
-                    : await setPassword(
+                  : mode === "signup"
+                    ? await createOwnerAccount(
+                        email,
                         password,
-                        mode === "invite"
-                          ? String(form.get("name"))
-                          : undefined,
-                      );
+                        String(form.get("name") || ""),
+                      )
+                    : mode === "forgot"
+                      ? await forgotPassword(email)
+                      : await setPassword(
+                          password,
+                          mode === "invite"
+                            ? String(form.get("name"))
+                            : undefined,
+                        );
             setBusy(false);
             if (result.error) {
               setError(result.error);
@@ -102,7 +116,7 @@ export default function AuthForm({
             }
           }}
         >
-          {(mode === "invite" || mode === "signup") && (
+          {(mode === "invite" || mode === "signup" || mode === "join") && (
             <label>
               Display name
               <input
@@ -113,7 +127,10 @@ export default function AuthForm({
               />
             </label>
           )}
-          {(mode === "login" || mode === "forgot" || mode === "signup") && (
+          {(mode === "login" ||
+            mode === "forgot" ||
+            mode === "signup" ||
+            mode === "join") && (
             <label>
               Email
               <input
@@ -143,7 +160,10 @@ export default function AuthForm({
               />
             </label>
           )}
-          {(mode === "reset" || mode === "invite" || mode === "signup") && (
+          {(mode === "reset" ||
+            mode === "invite" ||
+            mode === "signup" ||
+            mode === "join") && (
             <label>
               Confirm password
               <input
@@ -169,7 +189,7 @@ export default function AuthForm({
               "Send reset link"
             ) : mode === "signup" ? (
               "Create account"
-            ) : mode === "invite" ? (
+            ) : mode === "invite" || mode === "join" ? (
               "Join leaderboard"
             ) : (
               "Save password"

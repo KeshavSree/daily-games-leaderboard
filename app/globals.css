@@ -981,3 +981,12 @@ input::file-selector-button {
     justify-content: space-between;
   }
 }
+
+.invite-url {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.invite-expiry {
+  margin-top: 14px;
+}

@@ -14,13 +14,24 @@ try {
     new URL("../supabase/migrations/003_owner_signup.sql", import.meta.url),
     "utf8",
   );
+  const linkMigration = await readFile(
+    new URL("../supabase/migrations/004_invitation_links.sql", import.meta.url),
+    "utf8",
+  );
   const test = (
     await readFile(new URL("../tests/database.sql", import.meta.url), "utf8")
   )
     .replace(/^\\set.*$/gm, "")
     .replace(
       /^\\ir.*$/gm,
-      () => migration + "\n" + krillionMigration + "\n" + ownerMigration,
+      () =>
+        migration +
+        "\n" +
+        krillionMigration +
+        "\n" +
+        ownerMigration +
+        "\n" +
+        linkMigration,
     );
   await db.exec(test);
   console.log(
