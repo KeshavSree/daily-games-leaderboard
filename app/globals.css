@@ -990,3 +990,7 @@ input::file-selector-button {
 .invite-expiry {
   margin-top: 14px;
 }
+
+.extension-nav { display: flex; align-items: center; }
+.extension-install { line-height: 1.7; padding-left: 20px; }
+.extension-install li { padding: 5px 0; }

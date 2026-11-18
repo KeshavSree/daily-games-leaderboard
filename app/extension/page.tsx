@@ -13,18 +13,23 @@ export default function Extension() {
           Download extension
         </a>
       </p>
-      <ol>
+      <ol className="extension-install">
         <li>Unzip the download.</li>
-        <li>Open chrome://extensions and enable Developer mode.</li>
+        <li>
+          Open <code>chrome://extensions</code> (Edge:{" "}
+          <code>edge://extensions</code>) and enable Developer mode.
+        </li>
         <li>Choose Load unpacked and select the unzipped folder.</li>
-        <li>Log in to Daily in the same browser.</li>
+        <li>
+          Log in to Daily in the same browser, then refresh your game tabs.
+        </li>
       </ol>
       <p>
         Finish a supported game, then click Submit to Daily. If no result
         appears, use the game’s Share button.
       </p>
-      <Link href="/login" className="text-link">
-        Log in
+      <Link href="/" className="text-link">
+        Back to leaderboard
       </Link>
     </main>
   );

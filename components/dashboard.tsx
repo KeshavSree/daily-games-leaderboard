@@ -259,6 +259,9 @@ export default function Dashboard({ initial }: { initial: DashboardData }) {
               ))}
             </div>
           </details>
+          <a className="nav-link extension-nav" href="/extension">
+            Extension
+          </a>
         </nav>
         <div className="header-actions">
           {me.role === "owner" && (
