@@ -1,4 +1,4 @@
-export type Game = "maptap" | "chainle" | "krillion" | "linkdle";
+export type Game = "maptap" | "chainle" | "krillion" | "linkdle" | "animillion";
 export type ParsedScore = {
   game: Game;
   score: number;
@@ -7,11 +7,13 @@ export type ParsedScore = {
 };
 export const gameNames: Record<Game, string> = {
   linkdle: "Linkdle",
+  animillion: "Animillion",
   maptap: "MapTap",
   chainle: "Chainle",
   krillion: "Krillion",
 };
 export const gameLinks: Record<Game, string> = {
+  animillion: "https://animillion.app",
   linkdle: "https://linkdle.com/en",
   krillion: "https://krillion.io",
   chainle: "https://chainle.io",
@@ -22,6 +24,7 @@ export const supportedGames: Game[] = [
   "chainle",
   "maptap",
   "linkdle",
+  "animillion",
 ];
 export const defaultSettings = {
   timezone: "America/Indiana/Indianapolis",
@@ -29,6 +32,8 @@ export const defaultSettings = {
   chainleAnchorNumber: 91,
   krillionAnchorDate: "2026-11-18",
   krillionAnchorNumber: 126,
+  animillionAnchorDate: "2026-11-18",
+  animillionAnchorNumber: 24,
 };
 export type Settings = typeof defaultSettings;
 export function dateInZone(
@@ -68,6 +73,19 @@ export function krillionPuzzleNumber(
     )
   );
 }
+export function animillionPuzzleNumber(
+  date: string,
+  settings: Settings = defaultSettings,
+) {
+  return (
+    settings.animillionAnchorNumber +
+    Math.round(
+      (Date.parse(date + "T12:00:00Z") -
+        Date.parse(settings.animillionAnchorDate + "T12:00:00Z")) /
+        86400000,
+    )
+  );
+}
 export function parseScore(
   raw: string,
   date: string,
@@ -80,8 +98,28 @@ export function parseScore(
   const isChain = /chainle\s*#/i.test(text);
   const isKrillion = /krillion\s*#/i.test(text);
   const isLinkdle = /\blinkdle\b/i.test(text);
-  if ([isMap, isChain, isKrillion, isLinkdle].filter(Boolean).length > 1)
+  const isAnimillion = /\banimillion\b/i.test(text);
+  if (
+    [isMap, isChain, isKrillion, isLinkdle, isAnimillion].filter(Boolean)
+      .length > 1
+  )
     throw new Error("Submit one game at a time.");
+  if (isAnimillion) {
+    const headers = [
+      ...text.matchAll(
+        /^ANIMILLION\s*[·•]\s*CLIMB\s*#(\d+)\s*[·•]\s*Floor\s+(\d+)\/700[ \t]*$/gim,
+      ),
+    ];
+    if (headers.length !== 1)
+      throw new Error("Paste the full Animillion share text.");
+    const number = Number(headers[0][1]);
+    const score = Number(headers[0][2]);
+    if (!Number.isSafeInteger(score) || score < 0 || score > 700)
+      throw new Error("Animillion scores must be 0–700.");
+    if (number !== animillionPuzzleNumber(date, settings))
+      throw new Error("Only today’s Animillion climb is open.");
+    return { game: "animillion", score, puzzleKey: String(number), date };
+  }
   if (isLinkdle) {
     const share =
       /^I solved today['’]s linkdle[ \t]+\(([^()\n→]+)→([^()\n→]+)\)[ \t]+in[ \t]+(\d+)[ \t]+jumps?![ \t]*🎉[ \t]+https:\/\/(?:www\.)?linkdle\.com\/en\/?$/i.exec(
@@ -174,13 +212,17 @@ export function parseScore(
       throw new Error("Only today’s Krillion puzzle is open.");
     return { game: "krillion", score, puzzleKey: String(number), date };
   }
-  throw new Error("Use a Krillion, Chainle, MapTap, or Linkdle share.");
+  throw new Error(
+    "Use a Krillion, Chainle, MapTap, Linkdle, or Animillion share.",
+  );
 }
 export function sampleScore(
   game: Game,
   date: string,
   settings: Settings = defaultSettings,
 ) {
+  if (game === "animillion")
+    return `ANIMILLION · CLIMB #${animillionPuzzleNumber(date, settings)} · Floor 100/700\n⬛⬛⬜⬛🟪⬛🟦\nthe goblin warrens`;
   if (game === "linkdle")
     return "I solved today’s linkdle (Torque → Adverb) in 3 jumps! 🎉 https://linkdle.com/en";
   if (game === "krillion")

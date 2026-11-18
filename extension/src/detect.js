@@ -10,6 +10,21 @@ export function detectResult(text, hostname, date = dateInZone()) {
   if (!game || typeof text !== "string") return null;
   text = text.replace(/\r\n?/g, "\n").replace(/\u00a0/g, " ");
   const candidates = [];
+  if (game === "animillion") {
+    candidates.push(
+      ...[
+        ...text.matchAll(
+          /ANIMILLION[ \t]*[·•][ \t]*CLIMB[ \t]*#\d+[ \t]*[·•][ \t]*Floor[ \t]+\d+\/700/gi,
+        ),
+      ].map((match) => match[0]),
+    );
+    for (const result of text.matchAll(
+      /CLIMB[ \t]*#(\d+)[ \t]*[·•][ \t]*YOU REACHED\s+FLOOR[ \t]+(\d+)/gi,
+    ))
+      candidates.push(
+        `ANIMILLION · CLIMB #${result[1]} · Floor ${result[2]}/700`,
+      );
+  }
   if (game === "linkdle") {
     const jumps = /Jumps[^\n]*\n\s*(\d+)/i.exec(text);
     const path = /Path[^\n]*\n([^]*?)(?=\nCan you do better|\nTry again)/i.exec(

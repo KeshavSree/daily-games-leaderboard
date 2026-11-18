@@ -33,6 +33,10 @@ try {
     ),
     "utf8",
   );
+  const animillionMigration = await readFile(
+    new URL("../supabase/migrations/008_animillion.sql", import.meta.url),
+    "utf8",
+  );
   const test = (
     await readFile(new URL("../tests/database.sql", import.meta.url), "utf8")
   )
@@ -52,7 +56,9 @@ try {
         "\n" +
         linkdleMigration +
         "\n" +
-        reusableInviteMigration,
+        reusableInviteMigration +
+        "\n" +
+        animillionMigration,
     );
   await db.exec(test);
   console.log(

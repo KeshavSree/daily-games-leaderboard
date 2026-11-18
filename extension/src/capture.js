@@ -3,7 +3,9 @@
     if (
       typeof text === "string" &&
       text.length <= 4000 &&
-      /(?:maptap\.gg|Chainle\s*#|Krillion\s*#|today['’]s linkdle)/i.test(text)
+      /(?:ANIMILLION|maptap\.gg|Chainle\s*#|Krillion\s*#|today['’]s linkdle)/i.test(
+        text,
+      )
     )
       window.postMessage({ type: "daily:share", text }, location.origin);
   };

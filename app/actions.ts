@@ -25,6 +25,8 @@ export async function submitScore(
       chainleAnchorNumber: s.chainle_anchor_number,
       krillionAnchorDate: s.krillion_anchor_date,
       krillionAnchorNumber: s.krillion_anchor_number,
+      animillionAnchorDate: s.animillion_anchor_date,
+      animillionAnchorNumber: s.animillion_anchor_number,
     };
     const parsed = parseScore(
       raw,

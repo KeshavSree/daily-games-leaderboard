@@ -17,7 +17,7 @@ Production never silently falls back to the demo. `DEMO_MODE=true` explicitly en
 
 ## Connect Supabase
 
-1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql` `supabase/migrations/003_owner_signup.sql`, `supabase/migrations/004_invitation_links.sql`, `supabase/migrations/005_permanent_scores.sql`, `supabase/migrations/006_linkdle.sql`, and `supabase/migrations/007_owner_reusable_invite.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
+1. Create a Supabase project. Run `supabase/migrations/001_daily.sql`, then `supabase/migrations/002_krillion.sql` `supabase/migrations/003_owner_signup.sql`, `supabase/migrations/004_invitation_links.sql`, `supabase/migrations/005_permanent_scores.sql`, `supabase/migrations/006_linkdle.sql`, `supabase/migrations/007_owner_reusable_invite.sql`, and `supabase/migrations/008_animillion.sql`, in order in the SQL editor once. It creates the private tables, invitation logic, transactional submission and settlement functions, and a private `avatars` bucket.
 2. Copy `.env.example` to `.env.local`. Set the project URL, anon/publishable key, service role key, and app URL. The service key stays server-side; never use a `NEXT_PUBLIC_` name for it.
 3. Under Authentication, disable public signups. Set your Site URL and allow `/auth/confirm` on your local and production app origins. Configure your own SMTP provider for password recovery emails. Member invitations use copyable links and do not need email delivery.
 4. The app handles Supabase's standard invitation/recovery links, including browser URL fragments. Its callback removes tokens from the address bar and saves the authenticated session in cookies. If you configure custom SMTP and want token-hash links, use these optional email templates:
@@ -105,3 +105,5 @@ The configured root owner can also have a reusable invitation with no expiration
 ## Browser extension
 
 Download at `/extension`. Build the unpacked Chrome/Edge zip with `npm run build:extension`. Source is in `extension/`; the generated download is served from `public/downloads/daily-extension.zip`. It detects visible completed shares and the game’s Share output, then submits only on an explicit click. Authentication uses an inactive same-origin Daily tab and a CSRF-protected endpoint; no session tokens leave Daily.
+
+Animillion uses floor 0–700, higher wins. Climb #24 is anchored to November 18, 2026.

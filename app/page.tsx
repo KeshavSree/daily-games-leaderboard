@@ -45,6 +45,8 @@ export default async function Home({
     chainleAnchorNumber: s.chainle_anchor_number,
     krillionAnchorDate: s.krillion_anchor_date,
     krillionAnchorNumber: s.krillion_anchor_number,
+    animillionAnchorDate: s.animillion_anchor_date,
+    animillionAnchorNumber: s.animillion_anchor_number,
   };
   const date = dateInZone(new Date(), settings.timezone);
   const [profiles, scores, history, latest, lastScore] = await Promise.all([

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Daily/",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Submit completed daily game scores to your private Daily leaderboard.",
   "minimum_chrome_version": "111",
   "permissions": ["activeTab"],
@@ -25,7 +25,9 @@
         "https://www.chainle.io/*",
         "https://maptap.gg/*",
         "https://www.maptap.gg/*",
-        "https://linkdle.com/en*"
+        "https://linkdle.com/en*",
+        "https://animillion.app/*",
+        "https://www.animillion.app/*"
       ],
       "js": ["capture.js"],
       "run_at": "document_start",
@@ -39,7 +41,9 @@
         "https://www.chainle.io/*",
         "https://maptap.gg/*",
         "https://www.maptap.gg/*",
-        "https://linkdle.com/en*"
+        "https://linkdle.com/en*",
+        "https://animillion.app/*",
+        "https://www.animillion.app/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
