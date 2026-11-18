@@ -38,3 +38,23 @@ document
   .addEventListener("click", () =>
     chrome.runtime.sendMessage({ type: "daily:login" }),
   );
+
+const account = document.querySelector("#account");
+const login = document.querySelector("#login");
+async function refreshAccount() {
+  login.hidden = true;
+  try {
+    const result = await chrome.runtime.sendMessage({ type: "daily:status" });
+    if (result?.ok) {
+      account.textContent = `Logged in as ${result.name}`;
+    } else if (result?.authenticated === false) {
+      account.textContent = "";
+      login.hidden = false;
+    } else {
+      account.textContent = "Could not check account";
+    }
+  } catch {
+    account.textContent = "Could not check account";
+  }
+}
+void refreshAccount();

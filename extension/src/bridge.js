@@ -9,7 +9,11 @@ if (location.origin === DAILY && location.pathname === "/extension") {
         cache: "no-store",
       });
       const data = await session.json();
-      if (!session.ok) return data;
+      if (!session.ok)
+        return {
+          ...data,
+          ...(session.status === 401 ? { authenticated: false } : {}),
+        };
       if (message.operation === "status") return { ok: true, name: data.name };
       if (message.operation !== "submit" || typeof message.raw !== "string")
         return { error: "Invalid request." };
