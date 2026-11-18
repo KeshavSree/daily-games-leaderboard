@@ -34,6 +34,13 @@ export function detectResult(text, hostname, date = dateInZone()) {
       ),
     ];
     candidates.push(...matches.map((match) => match[0]));
+    // The completed screen is restored on reload without generating share text.
+    // Read its final total directly, never the background HUD or round scores.
+    for (const result of text.matchAll(
+      /\bDive[ \t]*#[ \t]*(\d+)[ \t]+complete[ \t]*\n[ \t]*(\d+)[ \t]*(?=\n|$)/gi,
+    )) {
+      candidates.push(`Krillion #${result[1]} 🦐\n${result[2]}`);
+    }
   }
   if (game === "maptap") {
     const matches = [
