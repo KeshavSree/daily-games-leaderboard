@@ -5,11 +5,30 @@ import {
   formatScore,
 } from "../../lib/games.ts";
 import { GAME_HOSTS } from "./config.js";
-export function detectResult(text, hostname, date = dateInZone()) {
+export function detectResult(
+  text,
+  hostname,
+  date = dateInZone(),
+  pageDate = date,
+) {
   const game = GAME_HOSTS[hostname];
   if (!game || typeof text !== "string") return null;
   text = text.replace(/\r\n?/g, "\n").replace(/\u00a0/g, " ");
   const candidates = [];
+  if (game === "travle") {
+    const route =
+      /^Today I['’]d like to\s+travle\s+from\s+([^\n]+?)\s+to\s+([^\n]+)$/im.exec(
+        text,
+      );
+    const result =
+      /^Success![^\n]*\n[ \t]*(\d+) guesses?[ \t]*\(\+(\d+)\)[ \t]*$/im.exec(
+        text,
+      );
+    if (route && result)
+      candidates.push(
+        `Travle ${pageDate}\n${route[1].trim()} → ${route[2].trim()}\n${result[1]} guesses (+${result[2]})`,
+      );
+  }
   if (game === "farflung") {
     for (const result of text.matchAll(
       /Farflung(?:[ \t]+Expedition)?[ \t]*#\d+[ \t]*\n[ \t]*[\d,]+[ \t]*km/gi,

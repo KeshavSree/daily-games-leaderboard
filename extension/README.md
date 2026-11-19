@@ -1,6 +1,6 @@
 # Daily/
 
-Chrome and Edge extension for MapTap, Chainle, Krillion, English Linkdle, Animillion, and Farflung.
+Chrome and Edge extension for MapTap, Chainle, Krillion, English Linkdle, Animillion, Farflung, and the daily world Travle.
 
 1. Unzip this folder.
 2. Open chrome://extensions (Edge: edge://extensions).

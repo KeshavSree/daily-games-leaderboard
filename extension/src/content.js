@@ -1,5 +1,6 @@
 import { dateInZone } from "../../lib/games.ts";
 import { detectResult } from "./detect.js";
+const pageDate = dateInZone();
 let candidate = null;
 let captured = "";
 let capturedDate = "";
@@ -90,7 +91,7 @@ function scan() {
     const value = el.getAttribute("title") || el.value || "";
     if (value.length <= 4000) texts.push(value);
   }
-  let next = detectResult(texts.join("\n"), location.hostname);
+  let next = detectResult(texts.join("\n"), location.hostname, today, pageDate);
   if (!next && captured) next = detectResult(captured, location.hostname);
   if (next) show(next);
   else {

@@ -41,6 +41,10 @@ try {
     new URL("../supabase/migrations/009_farflung.sql", import.meta.url),
     "utf8",
   );
+  const travleMigration = await readFile(
+    new URL("../supabase/migrations/010_travle.sql", import.meta.url),
+    "utf8",
+  );
   const test = (
     await readFile(new URL("../tests/database.sql", import.meta.url), "utf8")
   )
@@ -64,7 +68,9 @@ try {
         "\n" +
         animillionMigration +
         "\n" +
-        farflungMigration,
+        farflungMigration +
+        "\n" +
+        travleMigration,
     );
   await db.exec(test);
   console.log(

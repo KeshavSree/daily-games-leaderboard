@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Daily/",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Submit completed daily game scores to your private Daily leaderboard.",
   "minimum_chrome_version": "111",
   "permissions": ["activeTab"],
@@ -47,7 +47,8 @@
         "https://animillion.app/*",
         "https://www.animillion.app/*",
         "https://farflung.game/*",
-        "https://www.farflung.game/*"
+        "https://www.farflung.game/*",
+        "https://travle.earth/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

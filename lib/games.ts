@@ -1,5 +1,11 @@
 export type Game =
-  "maptap" | "chainle" | "krillion" | "linkdle" | "animillion" | "farflung";
+  | "maptap"
+  | "chainle"
+  | "krillion"
+  | "linkdle"
+  | "animillion"
+  | "farflung"
+  | "travle";
 export type ParsedScore = {
   game: Game;
   score: number;
@@ -9,6 +15,7 @@ export type ParsedScore = {
 export const gameNames: Record<Game, string> = {
   linkdle: "Linkdle",
   farflung: "Farflung",
+  travle: "Travle",
   animillion: "Animillion",
   maptap: "MapTap",
   chainle: "Chainle",
@@ -16,6 +23,7 @@ export const gameNames: Record<Game, string> = {
 };
 export const gameLinks: Record<Game, string> = {
   farflung: "https://farflung.game",
+  travle: "https://travle.earth",
   animillion: "https://animillion.app",
   linkdle: "https://linkdle.com/en",
   krillion: "https://krillion.io",
@@ -29,6 +37,7 @@ export const supportedGames: Game[] = [
   "linkdle",
   "animillion",
   "farflung",
+  "travle",
 ];
 export const defaultSettings = {
   timezone: "America/Indiana/Indianapolis",
@@ -117,14 +126,53 @@ export function parseScore(
   const isChain = /chainle\s*#/i.test(text);
   const isKrillion = /krillion\s*#/i.test(text);
   const isLinkdle = /\blinkdle\b/i.test(text);
+  const isTravle = /^(?:Travle[ \t]+\d{4}-\d{2}-\d{2}|#travle\b)/im.test(text);
   const isFarflung = /\bfarflung\b/i.test(text);
   const isAnimillion = /\banimillion\b/i.test(text);
   if (
-    [isMap, isChain, isKrillion, isLinkdle, isAnimillion, isFarflung].filter(
-      Boolean,
-    ).length > 1
+    [
+      isMap,
+      isChain,
+      isKrillion,
+      isLinkdle,
+      isAnimillion,
+      isFarflung,
+      isTravle,
+    ].filter(Boolean).length > 1
   )
     throw new Error("Submit one game at a time.");
+  if (isTravle) {
+    const result =
+      /^Travle (\d{4}-\d{2}-\d{2})\n([^\n→]+) → ([^\n→]+)\n(\d+) guesses? \(\+(\d+)\)$/i.exec(
+        text,
+      );
+    if (!result)
+      throw new Error("Use the Daily extension on your completed Travle game.");
+    const [, resultDate, start, end, total, extra] = result;
+    if (resultDate !== date) throw new Error("Only today’s Travle is open.");
+    const route = [start, end].map((country) =>
+      country.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase(),
+    );
+    if (
+      route.some((country) => !country || country.length > 100) ||
+      route[0] === route[1]
+    )
+      throw new Error("Invalid Travle route.");
+    const guesses = Number(total);
+    const score = Number(extra);
+    if (
+      !Number.isSafeInteger(guesses) ||
+      guesses > 2147483647 ||
+      score > guesses
+    )
+      throw new Error("Invalid Travle guess count.");
+    return {
+      game: "travle",
+      score,
+      puzzleKey: JSON.stringify([date, ...route]),
+      date,
+    };
+  }
   if (isFarflung) {
     const share =
       /^Farflung(?:[ \t]+Expedition)?[ \t]*#(\d+)[ \t]*\n[ \t]*(\d{1,3}(?:,\d{3})+|\d+)[ \t]*km(?:\nhttps:\/\/(?:www\.)?farflung\.game\/?)?$/i.exec(
@@ -256,6 +304,8 @@ export function sampleScore(
   date: string,
   settings: Settings = defaultSettings,
 ) {
+  if (game === "travle")
+    return `Travle ${date}\nDjibouti → Western Sahara\n7 guesses (+3)`;
   if (game === "farflung")
     return `Farflung #${farflungPuzzleNumber(date, settings)}\n250 km`;
   if (game === "animillion")
@@ -276,6 +326,7 @@ export function sampleScore(
 
 export function formatScore(game: Game, score: number) {
   const value = score.toLocaleString("en-US");
+  if (game === "travle") return `+${value}`;
   return game === "farflung"
     ? `${value} km`
     : game === "linkdle"
