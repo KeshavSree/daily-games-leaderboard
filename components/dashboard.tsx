@@ -566,6 +566,9 @@ export default function Dashboard({
           </section>
         )}
       </main>
+      <footer className="privacy-footer">
+        <a href="/privacy">Privacy</a>
+      </footer>
       {modal === "profile" && (
         <Modal title="Your profile" close={() => setModal(null)}>
           <form
