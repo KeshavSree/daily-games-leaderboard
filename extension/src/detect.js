@@ -30,6 +30,8 @@ export function detectResult(
       );
   }
   if (game === "farflung") {
+    if (/^Farflung[ \t]+#\d+[ \t]*[·•]/i.test(text.trim()))
+      candidates.push(text.trim());
     for (const result of text.matchAll(
       /Farflung(?:[ \t]+Expedition)?[ \t]*#\d+[ \t]*\n[ \t]*[\d,]+[ \t]*km/gi,
     ))

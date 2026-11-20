@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Daily/",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Submit completed daily game scores to your private Daily leaderboard.",
   "minimum_chrome_version": "111",
   "permissions": ["activeTab"],

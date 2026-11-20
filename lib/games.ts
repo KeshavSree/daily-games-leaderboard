@@ -174,15 +174,44 @@ export function parseScore(
     };
   }
   if (isFarflung) {
-    const share =
+    const officialShare =
+      /^Farflung[ \t]+#(\d+)[ \t]*[·•][ \t]*(\d+)\/500[ \t]+km[ \t]*\n([^\n]+)\nhttps:\/\/(?:www\.)?farflung\.game\/s\/[a-z0-9_-]+\?e=(\d+)$/i.exec(
+        text,
+      );
+    const screenResult =
       /^Farflung(?:[ \t]+Expedition)?[ \t]*#(\d+)[ \t]*\n[ \t]*(\d{1,3}(?:,\d{3})+|\d+)[ \t]*km(?:\nhttps:\/\/(?:www\.)?farflung\.game\/?)?$/i.exec(
         text,
       );
+    const share = officialShare ?? screenResult;
     if (!share) throw new Error("Paste a Farflung result.");
     const number = Number(share[1]);
     const score = Number(share[2].replaceAll(",", ""));
-    if (!Number.isSafeInteger(score) || score < 0 || score > 2147483647)
-      throw new Error("Invalid Farflung distance.");
+    if (officialShare) {
+      const distanceByRarity = new Map([
+        ["miss", 0],
+        ["common", 40],
+        ["uncommon", 55],
+        ["rare", 70],
+        ["elusive", 85],
+        ["farflung", 100],
+      ]);
+      const distances = officialShare[3]
+        .split(/[·•]/)
+        .map(
+          (rarity) => distanceByRarity.get(rarity.trim().toLowerCase()) ?? NaN,
+        );
+      if (
+        distances.length !== 5 ||
+        distances.reduce((sum, value) => sum + value, 0) !== score
+      )
+        throw new Error(
+          "Farflung’s five pin distances must add up to the total.",
+        );
+      if (Number(officialShare[4]) !== number)
+        throw new Error("Farflung’s share link must match the expedition.");
+    }
+    if (!Number.isSafeInteger(score) || score < 0 || score > 500)
+      throw new Error("Farflung distance must be 0–500 km.");
     if (number !== farflungPuzzleNumber(date, settings))
       throw new Error("Only today’s Farflung expedition is open.");
     return { game: "farflung", score, puzzleKey: String(number), date };
